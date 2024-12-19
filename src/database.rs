@@ -20,7 +20,7 @@ where
     C: GenericClient,
 {
     const SQL: &str = "DELETE FROM link WHERE id = $1";
-    const TYPES: &[Type] = &[Type::TEXT, Type::TEXT];
+    const TYPES: &[Type] = &[Type::TEXT];
 
     let stmt = client.prepare_typed(SQL, TYPES).await?;
     client.execute(&stmt, &[&id]).await?;
@@ -36,6 +36,12 @@ where
     const TYPES: &[Type] = &[Type::TEXT];
 
     let stmt = client.prepare_typed(SQL, TYPES).await?;
-    let row = client.query_one(&stmt, &[&id]).await?;
-    row.try_get("url")
+
+    let row = client.query_opt(&stmt, &[&id]).await?;
+
+    Ok(row.and_then(|r| r.try_get::<_, String>("url").ok())
+        .unwrap_or_else(|| String::new()))
+
+    // let row = client.query_one(&stmt, &[&id]).await?;
+    // row.try_get("url")
 }
